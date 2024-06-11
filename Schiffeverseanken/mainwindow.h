@@ -1,23 +1,37 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
+#include <QWidget>
+#include <QPushButton>
+#include <QGridLayout>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QLabel>
 
-QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
-}
-QT_END_NAMESPACE
-
-class MainWindow : public QMainWindow
+class Fenster : public QWidget
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    Fenster(QWidget *parent = nullptr);
+    ~Fenster();
+
+private slots:
+    void onButtonClicked();
 
 private:
-    Ui::MainWindow *ui;
+    QVBoxLayout *windowlayout;
+    QWidget *Oberleiste;
+    QWidget *Spielfeld;
+    QWidget *Unterleiste;
+    QHBoxLayout *Oberleistelayout;
+    QGridLayout *Spielfeldlayout;
+    QHBoxLayout *Unterleistelayout;
+    QLabel *label1;
+    QLabel *label2;
+    QLabel *label3;
+    int haufigkeit = 1;
+    QPushButton *button;
 };
+
 #endif // MAINWINDOW_H
