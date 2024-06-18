@@ -9,11 +9,23 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    brett.cpp \
+    kreuzer.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    schiff.cpp \
+    schlachtschiff.cpp \
+    uboote.cpp \
+    zerstoerer.cpp
 
 HEADERS += \
-    mainwindow.h
+    brett.h \
+    kreuzer.h \
+    mainwindow.h \
+    schiff.h \
+    schlachtschiff.h \
+    uboote.h \
+    zerstoerer.h
 
 FORMS += \
     mainwindow.ui
