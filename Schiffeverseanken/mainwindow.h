@@ -32,11 +32,19 @@ public:
 private slots:
 
     void onButtonClicked();
+    void onButtonClickedZwei();
     void erhoehen();
     void verringern();
     void switchShip(int Zahl, bool Richtung);
-    void zelleGeklicktSlot(QPushButton *clickedButton,int row, int col);
-    bool sindZellenFrei(int row, int col, int laenge, bool horizontal);
+    void zelleGeklicktSlotEins(QPushButton *clickedButton,int row, int col);
+    void zelleGeklicktSlotZwei(QPushButton *clickedButton,int row, int col);
+    void zelleGeklicktSlotDrei(QPushButton *clickedButton,int row, int col);
+    void zelleGeklicktSlotVier(QPushButton *clickedButton,int row, int col);
+    bool sindZellenFreiEins(int row, int col, int laenge, bool horizontal);
+    bool sindZellenFreiZwei(int row, int col, int laenge, bool horizontal);
+    bool sindZellenFreiDrei(int row, int col, int laenge, bool horizontal);
+    bool sindZellenFreiVier(int row, int col, int laenge, bool horizontal);
+    void Spielen();
 
 private:
     Ui::MainWindow *ui;
@@ -50,13 +58,19 @@ private:
     QLabel *Reihenfolge;
     int haufigkeit = 1;
     QPushButton *button;
+    QPushButton *Doppelpfeil;
     QPushButton *spinboxbuttonhoch;
     QPushButton *spinboxbuttonrunter;
     QLabel *spinboxtext;
     QHBoxLayout *erweiterteslayoutEins;
     int Zahl = 2;
+    //Spielbrett zum erstellen
     Brett *brett1;
     Brett *brett2;
+    //Spielbrett zum spielen
+    Brett *brett1spiel;
+    Brett *brett2spiel;
+
     QVBoxLayout *qvboxlayout;
     QWidget *qvboxwidget;
 
@@ -78,6 +92,10 @@ private:
     bool Zahlverboten4 = false;
     bool Zahlverboten5 = false;
     bool SpielerEinsIstFertig = false;
+    bool brett1spielIsCreated = false;
+    bool brett2spielIsCreated = false;
+    int EinsOderzwei = 0;
+    bool Siegergefunden = false;
 
 };
 

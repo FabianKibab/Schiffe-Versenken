@@ -38,13 +38,21 @@ Fenster::Fenster(QWidget *parent)
     brett1 = new Brett();
     brett2 = new Brett();
     Spielfeldlayout->addWidget(brett1, 0, 0);
-    Spielfeldlayout->addWidget(brett2, 0, 1);
+    Spielfeldlayout->addWidget(brett2, 0, 2);
 
+    //Richtungs Button
     button = new QPushButton("Richtung");
     button->setMinimumSize(100, 25);
     button->setMaximumSize(440, 25);
     button->setFixedHeight(100);
     Spielfeldlayout->addWidget(button, 2, 0);
+
+    //Doppelpfeil Button
+    Doppelpfeil = new QPushButton;
+    Doppelpfeil->setFixedSize(50,50);
+    Doppelpfeil->setIcon(QIcon("D:/2.Semester/FORTGESCHRITTENES C&CPP/Projete mit QT/Schiffeversenke Probe1/doppelpfeil.png"));
+    Doppelpfeil->setIconSize(QSize(50,50));
+    Spielfeldlayout->addWidget(Doppelpfeil,0,1);
 
     // Anzeige des QVBoxlayout
     qvboxwidget = new QWidget();
@@ -52,7 +60,7 @@ Fenster::Fenster(QWidget *parent)
     qvboxwidget->setStyleSheet("QWidget { border: 1px solid black; }");
     qvboxlayout = new QVBoxLayout(qvboxwidget);
     qvboxlayout->setAlignment(Qt::AlignCenter);
-    Spielfeldlayout->addWidget(qvboxwidget,2,1,0,0);
+    Spielfeldlayout->addWidget(qvboxwidget,2,2,0,0);
 
     //hier muss ich eine connect methode machen
     uboot = new UBoote();
@@ -70,7 +78,7 @@ Fenster::Fenster(QWidget *parent)
     SpielerZwei = new QLabel("Spieler 2");
     SpielerZwei->setMinimumSize(200, 25);
     SpielerZwei->setMaximumSize(200, 25);
-    Spielfeldlayout->addWidget(SpielerZwei, 1, 1);
+    Spielfeldlayout->addWidget(SpielerZwei, 1, 2);
 
     spinboxtext = new QLabel();
     spinboxtext->setAlignment(Qt::AlignCenter);
@@ -94,14 +102,10 @@ Fenster::Fenster(QWidget *parent)
 
     // Alle connections
     connect(button, &QPushButton::clicked, this, &Fenster::onButtonClicked);
+    connect(Doppelpfeil, &QPushButton::clicked, this ,&Fenster::onButtonClickedZwei);
     connect(spinboxbuttonhoch, &QPushButton::clicked, this, &Fenster::erhoehen);
     connect(spinboxbuttonrunter, &QPushButton::clicked, this, &Fenster::verringern);
-
-    if(SpielerEinsIstFertig == false){
-        connect(brett1, &Brett::zelleGeklickt, this, &Fenster::zelleGeklicktSlot);
-    }
-
-    //connect(brett2, &Brett::zelleGeklickt, this, &Fenster::zelleGeklicktSlot);
+    connect(brett1, &Brett::zelleGeklickt, this, &Fenster::zelleGeklicktSlotEins);
 
     // Widgets zum Hauptlayout hinzufügen
     windowlayout->addWidget(Oberleiste);
@@ -117,13 +121,81 @@ Fenster::~Fenster()
     delete ui;
 }
 
-
 void Fenster::onButtonClicked()
 {
     Richtung = !Richtung; // Richtung umschalten
     button->setText(Richtung ? "Horizontal" : "Vertikal");
     std::cout << "Richtung(change) = " << Richtung << std::endl;
     switchShip(Zahl,Richtung);
+}
+
+void Fenster::onButtonClickedZwei()
+{
+
+    try{
+        int blackCount = 0;
+
+        if(EinsOderzwei == 0){
+            blackCount = 0;
+
+            for (int i = 1; i <= 10; i++) {
+                for (int j = 1; j <= 10; j++) {
+                    QPushButton *button = brett1->getButtonEins(i, j);
+                    if (button->styleSheet() == "background-color: black;") {
+                        blackCount++;
+                    }
+                }
+            }
+
+            if(blackCount < 14){
+                throw std::runtime_error("Es wurden noch nicht alle Schiffe plaziert!");
+            }
+            disconnect(brett1, &Brett::zelleGeklickt, this, &Fenster::zelleGeklicktSlotEins);
+            connect(brett2, &Brett::zelleGeklicktZwei, this, &Fenster::zelleGeklicktSlotZwei);
+            if (brett1spielIsCreated == false) {
+                brett1spiel = new Brett();
+                Spielfeldlayout->addWidget(brett1spiel, 0, 0);
+                brett1spielIsCreated = true;
+            }
+            Reihenfolge->setText("Spieler 2 am Zug");
+            Zahlverboten2 = false;
+            Zahlverboten3 = false;
+            Zahlverboten4 = false;
+            Zahlverboten5 = false;
+            erhoehen();
+            EinsOderzwei++;
+
+        }else if(EinsOderzwei == 1){
+            blackCount = 0;
+
+            for (int i = 1; i <= 10; i++) {
+                for (int j = 1; j <= 10; j++) {
+                    QPushButton *button = brett2->getButtonZwei(i, j);
+                    if (button->styleSheet() == "background-color: black;") {
+                        blackCount++;
+                    }
+                }
+            }
+
+            if(blackCount < 14){
+                throw std::runtime_error("Es wurden noch nicht alle Schiffe plaziert!");
+            }
+            disconnect(brett2, &Brett::zelleGeklickt, this, &Fenster::zelleGeklicktSlotZwei);
+            if (brett2spielIsCreated == false) {
+                brett2spiel = new Brett();
+                Spielfeldlayout->addWidget(brett2spiel, 0, 2);
+                brett2spielIsCreated = true;
+            }
+            Reihenfolge->setText("Spieler 1 am Zug");
+            Spielen();
+
+        }
+
+
+
+    }catch (std::exception &e) {
+    std::cerr << "Fehler: " << e.what() << std::endl;
+    }
 }
 
 void Fenster::erhoehen()
@@ -144,7 +216,7 @@ void Fenster::erhoehen()
             }
         }
     }
-    if (Zahl == 2) {
+    else if (Zahl == 2) {
         Zahl++;
         if(Zahlverboten3){
             Zahl++;
@@ -178,6 +250,7 @@ void Fenster::erhoehen()
     switchShip(Zahl, Richtung);
 
 }
+
 void Fenster::verringern()
 {
     if(Zahl > 2){
@@ -262,8 +335,6 @@ void Fenster::switchShip(int Zahl, bool Richtung)
         schlachtschiffV = nullptr;
     }
 
-    std::cout<<"Die Richtung hier ist:"<<Richtung<<std::endl;
-
     if (Richtung) {
         switch (Zahl) {
         case 2:
@@ -318,13 +389,12 @@ void Fenster::switchShip(int Zahl, bool Richtung)
     qvboxlayout->setAlignment(Qt::AlignCenter);
 }
 
-
-void Fenster::zelleGeklicktSlot(QPushButton *clickedButton, int row, int col) {
+void Fenster::zelleGeklicktSlotEins(QPushButton *clickedButton, int row, int col) {
     try {
         if (Richtung) { // horizontal
-            if (col + Zahl <= 11 && sindZellenFrei(row, col, Zahl, true)) {
+            if (col + Zahl <= 11 && sindZellenFreiEins(row, col, Zahl, true)) {
                 for (int i = 0; i < Zahl; ++i) {
-                    QPushButton *NachbarH = brett1->getButton(row, col + i);
+                    QPushButton *NachbarH = brett1->getButtonEins(row, col + i);
                     if (NachbarH) {
                         NachbarH->setStyleSheet("background-color: black;");
                     }
@@ -333,9 +403,83 @@ void Fenster::zelleGeklicktSlot(QPushButton *clickedButton, int row, int col) {
                 throw std::out_of_range("Horizontal passt das Schiff nicht rein oder die Zellen sind besetzt!");
             }
         } else { // vertikal
-            if (row + Zahl <= 11 && sindZellenFrei(row, col, Zahl, false)) {
+            if (row + Zahl <= 11 && sindZellenFreiEins(row, col, Zahl, false))
+            {
+
                 for (int i = 0; i < Zahl; ++i) {
-                    QPushButton *NachbarV = brett1->getButton(row + i, col);
+                    QPushButton *NachbarV = brett1->getButtonEins(row + i, col);
+                    if (NachbarV) {
+                        NachbarV->setStyleSheet("background-color: black;");
+                    }
+                }
+            }
+                else {
+                throw std::out_of_range("Vertikal passt das Schiff nicht rein oder die Zellen sind besetzt!");
+            }
+        }
+
+        // Aktualisieren Sie die `Zahlverboten`-Flags
+        switch (Zahl) {
+        case 5:
+            Zahlverboten5 = true;
+            break;
+        case 4:
+            Zahlverboten4 = true;
+            break;
+        case 3:
+            Zahlverboten3 = true;
+            break;
+        case 2:
+            Zahlverboten2 = true;
+            break;
+        default:
+            break;
+        }
+
+        erhoehen();
+    } catch (std::out_of_range &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+}
+
+bool Fenster::sindZellenFreiEins(int row, int col, int laenge, bool horizontal) {
+    QString Wasser = "background-color: lightblue;";
+
+    if (horizontal) {
+        for (int i = 0; i < laenge; ++i) {
+            QPushButton *button = brett1->getButtonEins(row, col + i);
+            if (!button || button->styleSheet() != Wasser) {
+                return false;
+            }
+        }
+    } else {
+        for (int i = 0; i < laenge; ++i) {
+            QPushButton *button = brett1->getButtonEins(row + i, col);
+            if (!button || button->styleSheet() != Wasser) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void Fenster::zelleGeklicktSlotZwei(QPushButton *clickedButton, int row, int col) {
+    try {
+        if (Richtung) { // horizontal
+            if (col + Zahl <= 11 && sindZellenFreiZwei(row, col, Zahl, true)) {
+                for (int i = 0; i < Zahl; ++i) {
+                    QPushButton *NachbarH = brett2->getButtonZwei(row, col + i);
+                    if (NachbarH) {
+                        NachbarH->setStyleSheet("background-color: black;");
+                    }
+                }
+            } else {
+                throw std::out_of_range("Horizontal passt das Schiff nicht rein oder die Zellen sind besetzt!");
+            }
+        } else { // vertikal
+            if (row + Zahl <= 11 && sindZellenFreiZwei(row, col, Zahl, false)) {
+                for (int i = 0; i < Zahl; ++i) {
+                    QPushButton *NachbarV = brett2->getButtonZwei(row + i, col);
                     if (NachbarV) {
                         NachbarV->setStyleSheet("background-color: black;");
                     }
@@ -369,19 +513,89 @@ void Fenster::zelleGeklicktSlot(QPushButton *clickedButton, int row, int col) {
     }
 }
 
-bool Fenster::sindZellenFrei(int row, int col, int laenge, bool horizontal) {
+bool Fenster::sindZellenFreiZwei(int row, int col, int laenge, bool horizontal) {
+    QString Wasser = "background-color: lightblue;";
+
     if (horizontal) {
         for (int i = 0; i < laenge; ++i) {
-            if (!brett1->getButton(row, col + i)->styleSheet().isEmpty()) {
+            QPushButton *button = brett2->getButtonZwei(row, col + i);
+            if (!button || button->styleSheet() != Wasser) {
                 return false;
             }
         }
     } else {
         for (int i = 0; i < laenge; ++i) {
-            if (!brett1->getButton(row + i, col)->styleSheet().isEmpty()) {
+            QPushButton *button = brett2->getButtonZwei(row + i, col);
+            if (!button || button->styleSheet() != Wasser) {
                 return false;
             }
         }
     }
     return true;
+}
+
+bool Fenster::sindZellenFreiDrei(int row, int col, int laenge, bool horizontal) {
+    QString Wasser = "background-color: lightblue;";
+
+    QPushButton *button = brett1spiel->getButtonEins(row, col);
+    if (!button || button->styleSheet() != Wasser) {
+        return false;
+    }
+    return true;
+}
+
+void Fenster::zelleGeklicktSlotDrei(QPushButton *clickedButton, int row, int col)
+{
+        QPushButton *Stelle = brett1spiel->getButtonEins(row, col);
+        //Wenn man trifft soll X ansonsten soll O
+        if(brett1->getroffenEins(row,col)){
+            //Stelle->setIcon(QIcon("D:/GitHub/Repository/Schiffe-Versenken/Schiffeverseanken/X.png"));
+            Stelle->setStyleSheet("background-color: rgb(255, 0, 0)");
+            Stelle->setText("X");
+        }
+        else{
+            //Stelle->setIcon(QIcon("D:/GitHub/Repository/Schiffe-Versenken/Schiffeverseanken/O.png"));
+            Stelle->setText("O");
+        }
+        disconnect(brett1spiel, &Brett::zelleGeklicktDrei,this,&Fenster::zelleGeklicktSlotDrei);
+        Reihenfolge->setText("Spieler 2 am Zug");
+        connect(brett2spiel, &Brett::zelleGeklicktVier, this, &Fenster::zelleGeklicktSlotVier);
+
+}
+
+bool Fenster::sindZellenFreiVier(int row, int col, int laenge, bool horizontal) {
+    QString Wasser = "background-color: lightblue;";
+
+
+    QPushButton *button = brett2spiel->getButtonEins(row, col);
+    if (!button || button->styleSheet() != Wasser) {
+        return false;
+    }
+    return true;
+
+}
+
+void Fenster::zelleGeklicktSlotVier(QPushButton *clickedButton, int row, int col) {
+    QPushButton *Stelle = brett2spiel->getButtonZwei(row, col);
+    //Wenn man trifft soll X ansonsten soll O
+    if(brett2->getroffenZwei(row,col)){
+        //Stelle->setIcon(QIcon("D:/GitHub/Repository/Schiffe-Versenken/Schiffeverseanken/X.png"));
+        Stelle->setStyleSheet("background-color: rgb(255, 0, 0)");
+        Stelle->setText("X");
+    }
+    else{
+        //Stelle->setIcon(QIcon("D:/GitHub/Repository/Schiffe-Versenken/Schiffeverseanken/O.png"));
+        Stelle->setText("O");
+    }
+    disconnect(brett2spiel, &Brett::zelleGeklicktVier,this,&Fenster::zelleGeklicktSlotVier);
+    Reihenfolge->setText("Spieler 1 am Zug");
+    connect(brett1spiel, &Brett::zelleGeklicktDrei, this, &Fenster::zelleGeklicktSlotDrei);
+
+}
+
+void Fenster::Spielen(){
+
+    disconnect(brett2, &Brett::zelleGeklicktZwei,this,&Fenster::zelleGeklicktSlotZwei);
+    connect(brett1spiel, &Brett::zelleGeklicktDrei,this,&Fenster::zelleGeklicktSlotDrei);
+
 }
