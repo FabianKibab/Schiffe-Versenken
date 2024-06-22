@@ -2,13 +2,34 @@
 #include "ui_mainwindow.h"
 
 
-Fenster::Fenster(QWidget *parent)
-    : QMainWindow(parent),
+Fenster::Fenster(QWidget *parent) :
+    QMainWindow(parent),
     ui(new Ui::MainWindow),
     haufigkeit(0)
 {
-    //Hauptfenster Einstellungen
     ui->setupUi(this);
+
+    this->setWindowTitle("Menue");
+    this->resize(1000,1000);
+    menue = new Menue(this);
+    zeigeMenue();
+    // Verbindung des Menüs mit dem Hauptfenster
+    connect(menue, &Menue::spielenClicked, this, &Fenster::zeigeHauptfenster);
+
+}
+
+Fenster::~Fenster()
+{
+    delete ui;
+}
+
+void Fenster::zeigeMenue()
+{
+    setCentralWidget(menue);
+}
+
+void Fenster::zeigeHauptfenster()
+{
     setWindowTitle("Schiffeversenken");
     resize(1000, 1000);
 
@@ -101,7 +122,7 @@ Fenster::Fenster(QWidget *parent)
     erweiterteslayoutEins->addWidget(spinboxbuttonrunter);
 
     // Alle connections
-    connect(button, &QPushButton::clicked, this, &Fenster::onButtonClicked);
+    connect(button, &QPushButton::clicked, this, &Fenster::VoHButton);
     connect(Doppelpfeil, &QPushButton::clicked, this ,&Fenster::onButtonClickedZwei);
     connect(spinboxbuttonhoch, &QPushButton::clicked, this, &Fenster::erhoehen);
     connect(spinboxbuttonrunter, &QPushButton::clicked, this, &Fenster::verringern);
@@ -116,12 +137,7 @@ Fenster::Fenster(QWidget *parent)
     setCentralWidget(centralWidget);
 }
 
-Fenster::~Fenster()
-{
-    delete ui;
-}
-
-void Fenster::onButtonClicked()
+void Fenster::VoHButton()
 {
     Richtung = !Richtung; // Richtung umschalten
     button->setText(Richtung ? "Horizontal" : "Vertikal");
@@ -194,7 +210,7 @@ void Fenster::onButtonClickedZwei()
 
 
     }catch (std::exception &e) {
-    std::cerr << "Fehler: " << e.what() << std::endl;
+        std::cerr << "Fehler: " << e.what() << std::endl;
     }
 }
 
@@ -413,7 +429,7 @@ void Fenster::zelleGeklicktSlotEins(QPushButton *clickedButton, int row, int col
                     }
                 }
             }
-                else {
+            else {
                 throw std::out_of_range("Vertikal passt das Schiff nicht rein oder die Zellen sind besetzt!");
             }
         }
@@ -534,6 +550,38 @@ bool Fenster::sindZellenFreiZwei(int row, int col, int laenge, bool horizontal) 
     return true;
 }
 
+void Fenster::zelleGeklicktSlotDrei(QPushButton *clickedButton, int row, int col) {
+
+    bool dukannstnochmal = false;
+
+    if (brett1->getroffenEins(row, col,false) == true) {
+        if(brett1->gewonnen() == true){
+            std::cout<<"Gewonnen!!!"<<std::endl;
+            Menue *ZweitesMenue = new Menue(this);
+            connect(ZweitesMenue, &Menue::spielenClicked, this, &Fenster::zeigeHauptfenster);
+            setCentralWidget(ZweitesMenue);
+        }
+        if(brett1->gewonnen() == false){
+            brett1spiel->getButtonEins(row, col)->setStyleSheet("background-color: rgb(255, 0, 0)");
+            brett1spiel->getButtonEins(row, col)->setText("X");
+            dukannstnochmal = true;
+        }
+    }else if(brett1->getroffenEins(row, col,true) == false) {
+        if(brett1->doppelt(row,col) == true){
+            brett1spiel->getButtonEins(row, col)->setText("O");
+            dukannstnochmal = false;
+        }else{
+            std::cout<<"Du kannst nochmal"<<std::endl;
+            dukannstnochmal = true;
+        }
+    }
+    if(!dukannstnochmal){
+        Reihenfolge->setText("Spieler 2 am Zug");
+        disconnect(brett1spiel, &Brett::zelleGeklicktDrei, this, &Fenster::zelleGeklicktSlotDrei);
+        connect(brett2spiel, &Brett::zelleGeklicktVier, this, &Fenster::zelleGeklicktSlotVier);
+    }
+}
+
 bool Fenster::sindZellenFreiDrei(int row, int col, int laenge, bool horizontal) {
     QString Wasser = "background-color: lightblue;";
 
@@ -542,25 +590,6 @@ bool Fenster::sindZellenFreiDrei(int row, int col, int laenge, bool horizontal) 
         return false;
     }
     return true;
-}
-
-void Fenster::zelleGeklicktSlotDrei(QPushButton *clickedButton, int row, int col)
-{
-        QPushButton *Stelle = brett1spiel->getButtonEins(row, col);
-        //Wenn man trifft soll X ansonsten soll O
-        if(brett1->getroffenEins(row,col)){
-            //Stelle->setIcon(QIcon("D:/GitHub/Repository/Schiffe-Versenken/Schiffeverseanken/X.png"));
-            Stelle->setStyleSheet("background-color: rgb(255, 0, 0)");
-            Stelle->setText("X");
-        }
-        else{
-            //Stelle->setIcon(QIcon("D:/GitHub/Repository/Schiffe-Versenken/Schiffeverseanken/O.png"));
-            Stelle->setText("O");
-        }
-        disconnect(brett1spiel, &Brett::zelleGeklicktDrei,this,&Fenster::zelleGeklicktSlotDrei);
-        Reihenfolge->setText("Spieler 2 am Zug");
-        connect(brett2spiel, &Brett::zelleGeklicktVier, this, &Fenster::zelleGeklicktSlotVier);
-
 }
 
 bool Fenster::sindZellenFreiVier(int row, int col, int laenge, bool horizontal) {
@@ -576,20 +605,35 @@ bool Fenster::sindZellenFreiVier(int row, int col, int laenge, bool horizontal) 
 }
 
 void Fenster::zelleGeklicktSlotVier(QPushButton *clickedButton, int row, int col) {
-    QPushButton *Stelle = brett2spiel->getButtonZwei(row, col);
-    //Wenn man trifft soll X ansonsten soll O
-    if(brett2->getroffenZwei(row,col)){
-        //Stelle->setIcon(QIcon("D:/GitHub/Repository/Schiffe-Versenken/Schiffeverseanken/X.png"));
-        Stelle->setStyleSheet("background-color: rgb(255, 0, 0)");
-        Stelle->setText("X");
+
+    bool dukannstnochmal = false;
+
+    if (brett2->getroffenZwei(row, col,false) == true) {
+        if(brett2->gewonnen() == true){
+            std::cout<<"Gewonnen!!!"<<std::endl;
+            Menue *ZweitesMenue = new Menue(this);
+            connect(ZweitesMenue, &Menue::spielenClicked, this, &Fenster::zeigeHauptfenster);
+            setCentralWidget(ZweitesMenue);
+        }
+        if(brett2->gewonnen() == false){
+            brett2spiel->getButtonEins(row, col)->setStyleSheet("background-color: rgb(255, 0, 0)");
+            brett2spiel->getButtonEins(row, col)->setText("X");
+            dukannstnochmal = true;
+        }
+    }else if(brett2->getroffenEins(row, col,true) == false) {
+        if(brett2->doppelt(row,col) == true){
+            brett2spiel->getButtonEins(row, col)->setText("O");
+            dukannstnochmal = false;
+        }else{
+            std::cout<<"Du kannst nochmal"<<std::endl;
+            dukannstnochmal = true;
+        }
     }
-    else{
-        //Stelle->setIcon(QIcon("D:/GitHub/Repository/Schiffe-Versenken/Schiffeverseanken/O.png"));
-        Stelle->setText("O");
+    if(!dukannstnochmal){
+        Reihenfolge->setText("Spieler 1 am Zug");
+        disconnect(brett2spiel, &Brett::zelleGeklicktVier,this,&Fenster::zelleGeklicktSlotVier);
+        connect(brett1spiel, &Brett::zelleGeklicktDrei, this, &Fenster::zelleGeklicktSlotDrei);
     }
-    disconnect(brett2spiel, &Brett::zelleGeklicktVier,this,&Fenster::zelleGeklicktSlotVier);
-    Reihenfolge->setText("Spieler 1 am Zug");
-    connect(brett1spiel, &Brett::zelleGeklicktDrei, this, &Fenster::zelleGeklicktSlotDrei);
 
 }
 
@@ -597,5 +641,4 @@ void Fenster::Spielen(){
 
     disconnect(brett2, &Brett::zelleGeklicktZwei,this,&Fenster::zelleGeklicktSlotZwei);
     connect(brett1spiel, &Brett::zelleGeklicktDrei,this,&Fenster::zelleGeklicktSlotDrei);
-
 }

@@ -15,7 +15,7 @@
 #include "zerstoerer.h"
 #include "kreuzer.h"
 #include "schlachtschiff.h"
-#include "rechteck.h"
+#include "menue.h"
 
 namespace Ui {
 class MainWindow;
@@ -31,7 +31,9 @@ public:
 
 private slots:
 
-    void onButtonClicked();
+    void zeigeMenue();
+    void zeigeHauptfenster();
+    void VoHButton();
     void onButtonClickedZwei();
     void erhoehen();
     void verringern();
@@ -48,6 +50,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    Menue *menue;
     QVBoxLayout *windowlayout;
     QWidget *Oberleiste;
     QWidget *Spielfeld;
@@ -96,7 +99,6 @@ private:
     bool brett2spielIsCreated = false;
     int EinsOderzwei = 0;
     bool Siegergefunden = false;
-
 };
 
 #endif // MAINWINDOW_H

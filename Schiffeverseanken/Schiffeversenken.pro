@@ -13,6 +13,7 @@ SOURCES += \
     kreuzer.cpp \
     main.cpp \
     mainwindow.cpp \
+    menue.cpp \
     schiff.cpp \
     schlachtschiff.cpp \
     uboote.cpp \
@@ -22,6 +23,7 @@ HEADERS += \
     brett.h \
     kreuzer.h \
     mainwindow.h \
+    menue.h \
     schiff.h \
     schlachtschiff.h \
     uboote.h \

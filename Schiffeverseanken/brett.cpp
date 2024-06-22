@@ -1,7 +1,9 @@
 #include "brett.h"
+#include "menue.h"
 
 Brett::Brett(QWidget *parent) : QWidget(parent)
 {
+
     this->setFixedSize(440, 440);
     Raster = new QGridLayout(this);
     Raster->setSpacing(0);
@@ -59,13 +61,6 @@ void Brett::plazierenEins() {
             }
             if (row != -1) break;
         }
-
-        if (row != -1 && col != -1) {
-            std::cout << "Die Array-Position des angeklickten Buttons: (" << row << ", " << col << ")" << std::endl;
-        } else {
-            std::cerr << "Fehler: Angeklickter Button nicht im felder-Array gefunden!" << std::endl;
-        }
-
         // Signal wird gesendet
         emit zelleGeklickt(clickedButton,row,col);
     }}
@@ -86,12 +81,6 @@ void Brett::plazierenZwei() {
                 }
             }
             if (row != -1) break;
-        }
-
-        if (row != -1 && col != -1) {
-            std::cout << "Die Array-Position des angeklickten Buttons: (" << row << ", " << col << ")" << std::endl;
-        } else {
-            std::cerr << "Fehler: Angeklickter Button nicht im felder-Array gefunden!" << std::endl;
         }
 
         // Signal wird gesendet
@@ -117,12 +106,6 @@ void Brett::plazierenDrei() {
             if (row != -1) break;
         }
 
-        if (row != -1 && col != -1) {
-            std::cout << "Die Array-Position des angeklickten Buttons: (" << row << ", " << col << ")" << std::endl;
-        } else {
-            std::cerr << "Fehler: Angeklickter Button nicht im felder-Array gefunden!" << std::endl;
-        }
-
         // Signal wird gesendet
         emit zelleGeklicktDrei(clickedButton,row,col);
     }}
@@ -143,12 +126,6 @@ void Brett::plazierenVier() {
                 }
             }
             if (row != -1) break;
-        }
-
-        if (row != -1 && col != -1) {
-            std::cout << "Die Array-Position des angeklickten Buttons: (" << row << ", " << col << ")" << std::endl;
-        } else {
-            std::cerr << "Fehler: Angeklickter Button nicht im felder-Array gefunden!" << std::endl;
         }
 
         // Signal wird gesendet
@@ -185,22 +162,55 @@ QPushButton* Brett::getButtonVier(int row, int col) {
     return nullptr;
 }
 
-bool Brett::getroffenEins(int row, int col){
-    if(felderEins[row][col]->styleSheet() == "background-color: black;"){
-        std::cout<<"getroffen!"<<std::endl;
-       return true;
-    }else{
-        std::cout<<"nicht getroffen!"<<std::endl;
+bool Brett::getroffenEins(int row, int col,bool skip){
+    if(felderEins[row][col]->styleSheet() == "background-color: black;")
+    {
+        if(skip == false){
+            getroffeneFelderEins++;
+        }
+        std::cout<<"getroffenefelder1 ="<<getroffeneFelderEins<<std::endl;
+        felderEins[row][col]->setStyleSheet("background-color: green;");
+        return true;
+    }
+    else{
         return false;
     }
 }
 
-bool Brett::getroffenZwei(int row, int col){
+bool Brett::getroffenZwei(int row, int col,bool skip){
     if(felderZwei[row][col]->styleSheet() == "background-color: black;"){
-        std::cout<<"getroffen!"<<std::endl;
+        if(skip == false){
+            getroffeneFelderZwei++;
+        }
+        std::cout<<"getroffenefelder2 ="<<getroffeneFelderZwei<<std::endl;
+        felderEins[row][col]->setStyleSheet("background-color: green;");
         return true;
     }else{
-        std::cout<<"nicht getroffen!"<<std::endl;
         return false;
     }
+}
+
+bool Brett::doppelt(int row,int col){
+    if(felderEins[row][col]->styleSheet() == "background-color: green;")
+    {
+        std::cout<<"Du hast bereits hier drauf geklickt"<<std::endl;
+        return false;
+    }
+    return true;
+}
+
+bool Brett::gewonnen(){
+    if(getroffeneFelderEins == 14){
+        std::cout<<"Spieler 1 hat gewonnen"<<std::endl;
+        getroffeneFelderEins = 0;
+        getroffeneFelderZwei = 0;
+        return true;
+    }
+    else if(getroffeneFelderZwei == 14){
+        std::cout<<"Spieler 2 hat gewonnen"<<std::endl;
+        getroffeneFelderEins = 0;
+        getroffeneFelderZwei = 0;
+        return true;
+    }
+    return false;
 }

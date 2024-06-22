@@ -9,6 +9,10 @@
 #include <iostream>
 #include <QString>
 
+
+
+class Menue;
+
 class Brett : public QWidget {
     Q_OBJECT
 public:
@@ -17,8 +21,12 @@ public:
     QPushButton* getButtonZwei(int row, int col);
     QPushButton* getButtonDrei(int row, int col);
     QPushButton* getButtonVier(int row, int col);
-    bool getroffenEins(int row, int col);
-    bool getroffenZwei(int row, int col);
+    bool getroffenEins(int row, int col, bool skip);
+    bool getroffenZwei(int row, int col, bool skip);
+    bool gewonnen();
+    bool doppelt(int row, int col);
+    int getroffeneFelderEins = 0;
+    int getroffeneFelderZwei = 0;
 
 private slots:
     void plazierenEins();
