@@ -11,17 +11,25 @@
 #include <QDebug>
 #include <stdexcept>
 #include <QObject>
-
+#include <QFile>
+#include <QTextStream>
+#include <vector>
+#include <algorithm>
+#include <iostream>
 
 class Menue : public QWidget {
     Q_OBJECT
 
 public:
     explicit Menue(QWidget *parent = nullptr);
-
+    QString playerNameOne;
+    QString playerPasswordOne;
+    QString playerNameTwo;
+    QString playerPasswordTwo;
 
 signals:
     void spielenClicked();
+    void spielerNamen(const QString &nameEins,const QString &nameZwei);
 
 public slots:
     void Start();
@@ -38,22 +46,22 @@ private slots:
     void Exit();
     void Reset();
     void ResetZwei();
+    void ResetLabels();
     void Kontrolle();
 
 private:
     QGridLayout *layout;
 
-    // Menue
     QLabel *Gewinner;
     QPushButton *Spielen, *Verlassen, *Rangliste;
 
-    // Spielen
     QPushButton *Anmelden, *Regestrieren, *Gastbenutzer;
-    // Anmelden
     QLineEdit *SpielernameEins, *passwortEins, *SpielernameZwei, *passwortZwei;
     QPushButton *BestaetigenEins, *BestaetigenZwei, *Bestaetigen, *Zurueck;
-    // Regestrieren
     QLineEdit *Spielername, *passwort;
+
+    QList<QLabel*> rankingLabels;
+
 };
 
 #endif // MENUE_H

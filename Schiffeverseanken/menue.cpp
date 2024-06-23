@@ -1,5 +1,14 @@
 #include "menue.h"
-#include "brett.h"
+
+struct Player {
+    QString name;
+    QString password;
+    int victories;
+
+    bool operator<(const Player& other) const {
+       return victories > other.victories; // Sortiere absteigend nach Anzahl der Siege
+    }
+};
 
 Menue::Menue(QWidget *parent) : QWidget(parent), layout(nullptr) {
 
@@ -8,7 +17,7 @@ Menue::Menue(QWidget *parent) : QWidget(parent), layout(nullptr) {
 
 void Menue::Start() {
 
-    Gewinner = new QLabel("Das letzte Match hat (noch niemand) gewonnen", this);
+    Gewinner = new QLabel("Schiffeversenken", this);
     Gewinner->setFixedHeight(200);
     Gewinner->setAlignment(Qt::AlignCenter);
 
@@ -33,7 +42,8 @@ void Menue::Start() {
 
 }
 
-void Menue::ranking(){
+void Menue::ranking() {
+    // Vorherige Widgets entfernen (ausser Ranking-Labels)
     if (Gewinner) {
         layout->removeWidget(Gewinner);
         delete Gewinner;
@@ -55,6 +65,48 @@ void Menue::ranking(){
         Verlassen = nullptr;
     }
 
+    // Benutzerdaten einlesen
+    std::vector<Player> players;
+    QFile file("D://GitHub//Repository//Schiffe-Versenken//Schiffeverseanken//loginDatei.txt");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "Fehler beim Öffnen der Datei:" << file.errorString();
+        return;
+    }
+
+    QTextStream stream(&file);
+    while (!stream.atEnd()) {
+        Player player;
+        player.name = stream.readLine();
+        player.password = stream.readLine();
+        player.victories = stream.readLine().toInt();
+        players.push_back(player);
+    }
+    file.close();
+
+    // Benutzerdaten sortieren
+    std::sort(players.begin(), players.end());
+
+    // Alte Ranking-Labels löschen
+    qDeleteAll(rankingLabels);
+    rankingLabels.clear();
+
+    // Dynamisch Widgets für Rangliste hinzufügen
+    for (size_t i = 0; i < players.size(); ++i) {
+        QLabel* label = new QLabel(QString("%1. %2 - Siege: %3")
+                                       .arg(i + 1)
+                                       .arg(players[i].name)
+                                       .arg(players[i].victories), this);
+        label->setAlignment(Qt::AlignCenter);
+        label->setFixedHeight(50);
+        layout->addWidget(label, static_cast<int>(i), 0, 1, 1);
+        rankingLabels.append(label);  // Speichern des Widgets
+    }
+
+    // Zurück-Button hinzufügen
+    Zurueck = new QPushButton("Zurück", this);
+    Zurueck->setFixedHeight(200);
+    layout->addWidget(Zurueck, static_cast<int>(players.size()), 0, 1, 1);
+    connect(Zurueck, &QPushButton::clicked, this, &Menue::ResetLabels);
 }
 
 void Menue::Exit() {
@@ -204,28 +256,43 @@ void Menue::bestaetigen() {
 }
 
 void Menue::Reset() {
-    layout->removeWidget(SpielernameEins);
-    delete SpielernameEins;
-    SpielernameEins = nullptr;
-    layout->removeWidget(passwortEins);
-    delete passwortEins;
-    passwortEins = nullptr;
-    layout->removeWidget(BestaetigenEins);
-    delete BestaetigenEins;
-    BestaetigenEins = nullptr;
-    layout->removeWidget(SpielernameZwei);
-    delete SpielernameZwei;
-    SpielernameZwei = nullptr;
-    layout->removeWidget(passwortZwei);
-    delete passwortZwei;
-    passwortZwei = nullptr;
-    layout->removeWidget(BestaetigenZwei);
-    delete BestaetigenZwei;
-    BestaetigenZwei = nullptr;
-    layout->removeWidget(Zurueck);
-    delete Zurueck;
-    Zurueck = nullptr;
 
+    if(SpielernameEins){
+        layout->removeWidget(SpielernameEins);
+        delete SpielernameEins;
+        SpielernameEins = nullptr;
+    }
+    if(passwortEins){
+        layout->removeWidget(passwortEins);
+        delete passwortEins;
+        passwortEins = nullptr;
+    }
+    if(BestaetigenEins){
+        layout->removeWidget(BestaetigenEins);
+        delete BestaetigenEins;
+        BestaetigenEins = nullptr;
+    }
+    if(SpielernameZwei){
+        layout->removeWidget(SpielernameZwei);
+        delete SpielernameZwei;
+        SpielernameZwei = nullptr;
+    }
+    if(passwortZwei){
+        layout->removeWidget(passwortZwei);
+        delete passwortZwei;
+        passwortZwei = nullptr;
+    }
+    if(BestaetigenZwei){
+        layout->removeWidget(BestaetigenZwei);
+        delete BestaetigenZwei;
+        BestaetigenZwei = nullptr;
+    }
+    if(Zurueck){
+        layout->removeWidget(Zurueck);
+        delete Zurueck;
+        Zurueck = nullptr;
+
+    }
     Start();
 }
 
@@ -246,12 +313,21 @@ void Menue::ResetZwei() {
     Start();
 }
 
+void Menue::ResetLabels(){
+    // Dynamische Ranking-Labels löschen
+    qDeleteAll(rankingLabels);
+    rankingLabels.clear();
+    layout->removeWidget(Zurueck);
+    delete Zurueck;
+    Zurueck = nullptr;
+    Start();
+
+}
 void Menue::PruefenEins() {
     try {
         if (SpielernameEins->text() == SpielernameZwei->text()) {
             throw std::runtime_error("Man kann nicht gegen sich selbst spielen!");
         }
-
         QString playerNameOne = SpielernameEins->text();
         QString playerPasswordOne = passwortEins->text();
 
@@ -336,7 +412,10 @@ void Menue::PruefenZwei() {
 
 void Menue::Kontrolle() {
     if (BestaetigenEins->styleSheet() == "background-color: green;" && BestaetigenZwei->styleSheet() == "background-color: green;") {
+        QString playerNameOne = SpielernameEins->text();
+        QString playerNameTwo = SpielernameZwei->text();
         emit spielenClicked();
+        emit spielerNamen(playerNameOne,playerNameTwo);
     }
 }
 

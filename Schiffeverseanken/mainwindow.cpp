@@ -1,6 +1,18 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+QString Erster;
+QString Zweiter;
+
+struct Player {
+    QString name;
+    QString password;
+    int victories;
+
+    bool operator<(const Player& other) const {
+        return victories > other.victories; // Sortiere absteigend nach Anzahl der Siege
+    }
+};
 
 Fenster::Fenster(QWidget *parent) :
     QMainWindow(parent),
@@ -15,7 +27,17 @@ Fenster::Fenster(QWidget *parent) :
     zeigeMenue();
     // Verbindung des Menüs mit dem Hauptfenster
     connect(menue, &Menue::spielenClicked, this, &Fenster::zeigeHauptfenster);
+    connect(menue, &Menue::spielerNamen, this,&Fenster::Namensaufloesung);
 
+}
+
+void Fenster::Namensaufloesung(const QString &nameEins,const QString &nameZwei){
+
+    Eigenenamen = true;
+    Erster = nameEins;
+    Zweiter = nameZwei;
+    std::cout<<"ich werde ausgefuehrt"<<std::endl;
+    Reihenfolge->setText(nameEins + " am Zug");
 }
 
 Fenster::~Fenster()
@@ -32,6 +54,17 @@ void Fenster::zeigeHauptfenster()
 {
     setWindowTitle("Schiffeversenken");
     resize(1000, 1000);
+
+    Richtung = true;
+    Loeschen = true;
+    Zahlverboten2 = false;
+    Zahlverboten3 = false;
+    Zahlverboten4 = false;
+    Zahlverboten5 = false;
+    SpielerEinsIstFertig = false;
+    brett1spielIsCreated = false;
+    brett2spielIsCreated = false;
+    EinsOderzwei = 0;
 
     // Hauptlayout für das Fenster erstellen
     windowlayout = new QVBoxLayout();
@@ -83,7 +116,6 @@ void Fenster::zeigeHauptfenster()
     qvboxlayout->setAlignment(Qt::AlignCenter);
     Spielfeldlayout->addWidget(qvboxwidget,2,2,0,0);
 
-    //hier muss ich eine connect methode machen
     uboot = new UBoote();
     qvboxlayout->addWidget(uboot);
     qvboxlayout->setAlignment(Qt::AlignCenter);
@@ -91,15 +123,29 @@ void Fenster::zeigeHauptfenster()
     erweiterteslayoutEins = new QHBoxLayout();
     Spielfeldlayout->addLayout(erweiterteslayoutEins, 3, 0);
 
-    SpielerEins = new QLabel("Spieler 1");
-    SpielerEins->setMinimumSize(200, 25);
-    SpielerEins->setMaximumSize(200, 25);
-    Spielfeldlayout->addWidget(SpielerEins, 1, 0);
+    if(Eigenenamen == false){
+        SpielerEins = new QLabel("Spieler 1");
+        SpielerEins->setMinimumSize(200, 25);
+        SpielerEins->setMaximumSize(200, 25);
+        Spielfeldlayout->addWidget(SpielerEins, 1, 0);
+    }else{
+        SpielerEins = new QLabel(Erster);
+        SpielerEins->setMinimumSize(200, 25);
+        SpielerEins->setMaximumSize(200, 25);
+        Spielfeldlayout->addWidget(SpielerEins, 1, 0);
+    }
 
-    SpielerZwei = new QLabel("Spieler 2");
-    SpielerZwei->setMinimumSize(200, 25);
-    SpielerZwei->setMaximumSize(200, 25);
-    Spielfeldlayout->addWidget(SpielerZwei, 1, 2);
+    if(Eigenenamen == false){
+        SpielerZwei = new QLabel("Spieler 2");
+        SpielerZwei->setMinimumSize(200, 25);
+        SpielerZwei->setMaximumSize(200, 25);
+        Spielfeldlayout->addWidget(SpielerZwei, 1, 2);
+    }else{
+        SpielerZwei = new QLabel(Zweiter);
+        SpielerZwei->setMinimumSize(200, 25);
+        SpielerZwei->setMaximumSize(200, 25);
+        Spielfeldlayout->addWidget(SpielerZwei, 1, 2);
+    }
 
     spinboxtext = new QLabel();
     spinboxtext->setAlignment(Qt::AlignCenter);
@@ -173,7 +219,12 @@ void Fenster::onButtonClickedZwei()
                 Spielfeldlayout->addWidget(brett1spiel, 0, 0);
                 brett1spielIsCreated = true;
             }
-            Reihenfolge->setText("Spieler 2 am Zug");
+            if(Eigenenamen == false){
+                Reihenfolge->setText("Spieler 2 am Zug");
+            }
+            else{
+                Reihenfolge->setText(Zweiter + " am Zug");
+            }
             Zahlverboten2 = false;
             Zahlverboten3 = false;
             Zahlverboten4 = false;
@@ -202,7 +253,11 @@ void Fenster::onButtonClickedZwei()
                 Spielfeldlayout->addWidget(brett2spiel, 0, 2);
                 brett2spielIsCreated = true;
             }
-            Reihenfolge->setText("Spieler 1 am Zug");
+            if(Eigenenamen == false){
+                Reihenfolge->setText("Spieler 1 am Zug");
+            }else{
+                Reihenfolge->setText(Erster + " am Zug");
+            }
             Spielen();
 
         }
@@ -551,36 +606,98 @@ bool Fenster::sindZellenFreiZwei(int row, int col, int laenge, bool horizontal) 
 }
 
 void Fenster::zelleGeklicktSlotDrei(QPushButton *clickedButton, int row, int col) {
-
     bool dukannstnochmal = false;
 
-    if (brett1->getroffenEins(row, col,false) == true) {
-        if(brett1->gewonnen() == true){
-            std::cout<<"Gewonnen!!!"<<std::endl;
-            Menue *ZweitesMenue = new Menue(this);
-            connect(ZweitesMenue, &Menue::spielenClicked, this, &Fenster::zeigeHauptfenster);
-            setCentralWidget(ZweitesMenue);
+    if (brett1->getroffenEins(row, col, false)) {
+        if (brett1->gewonnen()) {
+            // Jetzt muss das in die txt Datei geschrieben werden
+            QFile file("D://GitHub//Repository//Schiffe-Versenken//Schiffeverseanken//loginDatei.txt");
+            if (!file.open(QIODevice::ReadWrite | QIODevice::Text)) {
+                qDebug() << "Fehler beim Öffnen der Datei:" << file.errorString();
+                return;
+            }
+
+            QTextStream stream(&file);
+            QVector<Player> players;
+            QString name, password;
+            int victories;
+
+            // Read existing players
+            while (!stream.atEnd()) {
+                Player player;
+                player.name = stream.readLine();
+                if (stream.atEnd()) break;  // Handle incomplete entries
+                player.password = stream.readLine();
+                if (stream.atEnd()) break;  // Handle incomplete entries
+                player.victories = stream.readLine().toInt();
+                players.append(player);
+            }
+
+            // Update player data
+            for (Player &player : players) {
+                if (player.name == Zweiter) { // Assuming Erster is defined elsewhere
+                    player.victories += 1;
+                    break;
+                }
+            }
+
+            // Write back updated data
+            file.resize(0); // Clear the file before writing
+            for (const Player &player : players) {
+                stream << player.name << "\n" << player.password << "\n" << player.victories << "\n";
+            }
+
+            file.close();
+
+            // Lösche die Widgets aus dem Layout, falls sie existieren
+            if (brett1spiel) {
+                Spielfeldlayout->removeWidget(brett1spiel);
+                delete brett1spiel;
+                brett1spiel = nullptr; // Setze den Zeiger auf nullptr, um undefiniertes Verhalten zu vermeiden
+            }
+            if (brett2spiel) {
+                Spielfeldlayout->removeWidget(brett2spiel);
+                delete brett2spiel;
+                brett2spiel = nullptr; // Setze den Zeiger auf nullptr, um undefiniertes Verhalten zu vermeiden
+            }
+
+            Eigenenamen = false;
+            // Erstelle ein neues Menü und verbinde die Signale
+            createAndSetNewMenue();
         }
-        if(brett1->gewonnen() == false){
-            brett1spiel->getButtonEins(row, col)->setStyleSheet("background-color: rgb(255, 0, 0)");
-            brett1spiel->getButtonEins(row, col)->setText("X");
-            dukannstnochmal = true;
+
+        if (!brett1->gewonnen()) {
+            // Überprüfe, ob brett1spiel gültig ist, bevor du darauf zugreifst
+            if (brett1spiel) {
+                brett1spiel->getButtonEins(row, col)->setStyleSheet("background-color: rgb(255, 0, 0)");
+                brett1spiel->getButtonEins(row, col)->setText("X");
+                dukannstnochmal = true;
+            }
         }
-    }else if(brett1->getroffenEins(row, col,true) == false) {
-        if(brett1->doppelt(row,col) == true){
-            brett1spiel->getButtonEins(row, col)->setText("O");
+    } else if (!brett1->getroffenEins(row, col, true)) {
+        if (brett1->doppelt(row, col)) {
+            // Überprüfe, ob brett1spiel gültig ist, bevor du darauf zugreifst
+            if (brett1spiel) {
+                brett1spiel->getButtonEins(row, col)->setText("O");
+            }
             dukannstnochmal = false;
-        }else{
-            std::cout<<"Du kannst nochmal"<<std::endl;
+        } else {
+            std::cout << "Du kannst nochmal" << std::endl;
             dukannstnochmal = true;
         }
     }
-    if(!dukannstnochmal){
-        Reihenfolge->setText("Spieler 2 am Zug");
+
+    if (!dukannstnochmal) {
+        if (!Eigenenamen) {
+            Reihenfolge->setText("Spieler 1 am Zug");
+        } else {
+            Reihenfolge->setText(Erster + " am Zug");
+        }
         disconnect(brett1spiel, &Brett::zelleGeklicktDrei, this, &Fenster::zelleGeklicktSlotDrei);
         connect(brett2spiel, &Brett::zelleGeklicktVier, this, &Fenster::zelleGeklicktSlotVier);
     }
 }
+
 
 bool Fenster::sindZellenFreiDrei(int row, int col, int laenge, bool horizontal) {
     QString Wasser = "background-color: lightblue;";
@@ -605,40 +722,122 @@ bool Fenster::sindZellenFreiVier(int row, int col, int laenge, bool horizontal) 
 }
 
 void Fenster::zelleGeklicktSlotVier(QPushButton *clickedButton, int row, int col) {
-
     bool dukannstnochmal = false;
 
-    if (brett2->getroffenZwei(row, col,false) == true) {
-        if(brett2->gewonnen() == true){
-            std::cout<<"Gewonnen!!!"<<std::endl;
-            Menue *ZweitesMenue = new Menue(this);
-            connect(ZweitesMenue, &Menue::spielenClicked, this, &Fenster::zeigeHauptfenster);
-            setCentralWidget(ZweitesMenue);
+    if (brett2->getroffenZwei(row, col, false)) {
+        if (brett2->gewonnen()) {
+            // Datei öffnen und Daten aktualisieren
+            QFile file("D://GitHub//Repository//Schiffe-Versenken//Schiffeverseanken//loginDatei.txt");
+            if (!file.open(QIODevice::ReadWrite | QIODevice::Text)) {
+                qDebug() << "Fehler beim Öffnen der Datei:" << file.errorString();
+                return;
+            }
+
+            QTextStream stream(&file);
+            QVector<Player> players;
+
+            // Bestehende Spielerdaten einlesen
+            while (!stream.atEnd()) {
+                Player player;
+                player.name = stream.readLine();
+                if (stream.atEnd()) break;
+                player.password = stream.readLine();
+                if (stream.atEnd()) break;
+                player.victories = stream.readLine().toInt();
+                players.append(player);
+            }
+
+            // Spielerdaten aktualisieren
+            for (Player &player : players) {
+                if (player.name == Erster) {
+                    player.victories += 1;
+                    break;
+                }
+            }
+
+            // Aktualisierte Daten in die Datei schreiben
+            file.resize(0); // Dateiinhalt löschen
+            for (const Player &player : players) {
+                stream << player.name << "\n" << player.password << "\n" << player.victories << "\n";
+            }
+
+            file.close();
+
+            // Widgets aus dem Layout entfernen und löschen
+            if (brett2spiel) {
+                Spielfeldlayout->removeWidget(brett2spiel);
+                delete brett2spiel;
+                brett2spiel = nullptr;
+            }
+            if (brett1spiel) {
+                Spielfeldlayout->removeWidget(brett1spiel);
+                delete brett1spiel;
+                brett1spiel = nullptr;
+            }
+
+
+            Eigenenamen = false;
+            // Neues Menü erstellen und anzeigen
+            createAndSetNewMenue();
         }
-        if(brett2->gewonnen() == false){
-            brett2spiel->getButtonEins(row, col)->setStyleSheet("background-color: rgb(255, 0, 0)");
-            brett2spiel->getButtonEins(row, col)->setText("X");
-            dukannstnochmal = true;
+
+        // Wenn das Spiel nicht gewonnen wurde
+        if (!brett2->gewonnen()) {
+            // Überprüfen, ob brett2spiel gültig ist
+            if (brett2spiel) {
+                QPushButton *button = brett2spiel->getButtonZwei(row, col);
+                if (button) {
+                    button->setStyleSheet("background-color: rgb(255, 0, 0)");
+                    button->setText("X");
+                    dukannstnochmal = true;
+                }
+            }
         }
-    }else if(brett2->getroffenEins(row, col,true) == false) {
-        if(brett2->doppelt(row,col) == true){
-            brett2spiel->getButtonEins(row, col)->setText("O");
+    } else if (!brett2->getroffenEins(row, col, true)) {
+        if (brett2->doppelt(row, col)) {
+            // Überprüfen, ob brett2spiel gültig ist
+            if (brett2spiel) {
+                QPushButton *button = brett2spiel->getButtonZwei(row, col);
+                if (button) {
+                    button->setText("O");
+                }
+            }
             dukannstnochmal = false;
-        }else{
-            std::cout<<"Du kannst nochmal"<<std::endl;
+        } else {
+            std::cout << "Du kannst nochmal" << std::endl;
             dukannstnochmal = true;
         }
     }
-    if(!dukannstnochmal){
-        Reihenfolge->setText("Spieler 1 am Zug");
-        disconnect(brett2spiel, &Brett::zelleGeklicktVier,this,&Fenster::zelleGeklicktSlotVier);
+
+    // Text je nach Spielername aktualisieren
+    if (!dukannstnochmal) {
+        if (!Eigenenamen) {
+            Reihenfolge->setText("Spieler 2 am Zug");
+        } else {
+            Reihenfolge->setText(Zweiter + " am Zug");
+        }
+        disconnect(brett2spiel, &Brett::zelleGeklicktVier, this, &Fenster::zelleGeklicktSlotVier);
         connect(brett1spiel, &Brett::zelleGeklicktDrei, this, &Fenster::zelleGeklicktSlotDrei);
     }
-
 }
 
-void Fenster::Spielen(){
+void Fenster::Spielen() {
+    // Verbindungen aktualisieren
+    disconnect(brett2, &Brett::zelleGeklicktZwei, this, &Fenster::zelleGeklicktSlotZwei);
+    connect(brett2spiel, &Brett::zelleGeklicktVier, this, &Fenster::zelleGeklicktSlotVier);
+}
 
-    disconnect(brett2, &Brett::zelleGeklicktZwei,this,&Fenster::zelleGeklicktSlotZwei);
-    connect(brett1spiel, &Brett::zelleGeklicktDrei,this,&Fenster::zelleGeklicktSlotDrei);
+void Fenster::createAndSetNewMenue() {
+    // Neues Menü erstellen
+    Menue *newMenue = new Menue(this);
+
+    // Signale des neuen Menüs verbinden
+    connect(newMenue, &Menue::spielenClicked, this, &Fenster::zeigeHauptfenster);
+    connect(newMenue, &Menue::spielerNamen, this,&Fenster::Namensaufloesung);
+
+    // Neues Menü als zentrales Widget setzen
+    setCentralWidget(newMenue);
+
+    // Aktuelles Menü aktualisieren
+    currentMenue = newMenue;
 }

@@ -9,13 +9,13 @@
 #include <QVBoxLayout>
 #include <QLabel>
 
+#include "menue.h"
 #include "brett.h"
 #include "schiff.h"
 #include "uboote.h"
 #include "zerstoerer.h"
 #include "kreuzer.h"
 #include "schlachtschiff.h"
-#include "menue.h"
 
 namespace Ui {
 class MainWindow;
@@ -27,10 +27,10 @@ class Fenster : public QMainWindow
 
 public:
     explicit Fenster(QWidget *parent = nullptr);
+    bool Eigenenamen = false;
     ~Fenster();
 
 private slots:
-
     void zeigeMenue();
     void zeigeHauptfenster();
     void VoHButton();
@@ -47,6 +47,7 @@ private slots:
     bool sindZellenFreiDrei(int row, int col, int laenge, bool horizontal);
     bool sindZellenFreiVier(int row, int col, int laenge, bool horizontal);
     void Spielen();
+    void Namensaufloesung(const QString &nameEins,const QString &nameZwei);
 
 private:
     Ui::MainWindow *ui;
@@ -67,22 +68,21 @@ private:
     QLabel *spinboxtext;
     QHBoxLayout *erweiterteslayoutEins;
     int Zahl = 2;
-    //Spielbrett zum erstellen
+
     Brett *brett1;
     Brett *brett2;
-    //Spielbrett zum spielen
+
     Brett *brett1spiel;
     Brett *brett2spiel;
 
     QVBoxLayout *qvboxlayout;
     QWidget *qvboxwidget;
 
-    //Horrizontale Schiffe
     UBoote *uboot = nullptr;
     Zerstoerer *zerstoerer = nullptr;
     Kreuzer *kreuzer = nullptr;
     Schlachtschiff *schlachtschiff = nullptr;
-    //vertikale Schiffe
+
     UBoote *ubootV = nullptr;
     Zerstoerer *zerstoererV = nullptr;
     Kreuzer *kreuzerV = nullptr;
@@ -99,6 +99,9 @@ private:
     bool brett2spielIsCreated = false;
     int EinsOderzwei = 0;
     bool Siegergefunden = false;
+
+    void createAndSetNewMenue(); // Methode zur Erstellung eines neuen Menüs
+    Menue *currentMenue; // Zeiger auf das aktuelle Menü
 };
 
 #endif // MAINWINDOW_H
